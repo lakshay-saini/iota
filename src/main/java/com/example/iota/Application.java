@@ -9,11 +9,11 @@ public class Application {
 
     public static void main(String[] args) throws ArgumentException {
 
-        IOTACommunicator iotaCommunicator = new IOTACommunicator();
+        IOTACommunicator iotaCommunicator = new IOTACommunicator("14600");
 
         System.out.println("connecting to node......");
 
-        if(Objects.nonNull(iotaCommunicator.getNodeInfo().getAppName())){
+        if(Objects.nonNull(iotaCommunicator.getNodeInfo())){
           System.out.println(iotaCommunicator.getNodeInfo());
         }
     }
