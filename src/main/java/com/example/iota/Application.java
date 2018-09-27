@@ -14,7 +14,7 @@ public class Application {
         System.out.println("connecting to node......");
 
         if(Objects.nonNull(iotaCommunicator.getNodeInfo().getAppName())){
-          System.out.println("getNewAddress : - " + iotaCommunicator.getAccountData(IOTASEEDGenerator.getIOTASeed()));
+          System.out.println(iotaCommunicator.getNodeInfo());
         }
     }
 }

@@ -10,7 +10,7 @@ class IOTACommunicator {
     private static IotaAPI api = new IotaAPI.Builder()
             .protocol("http")
             .host("localhost")
-            .port("14700")
+            .port("14600")
             .build();
 
 
