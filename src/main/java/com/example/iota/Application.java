@@ -9,7 +9,7 @@ public class Application {
 
     public static void main(String[] args) throws ArgumentException {
 
-        IOTACommunicator iotaCommunicator = new IOTACommunicator("14600");
+        IOTACommunicator iotaCommunicator = new IOTACommunicator("14700");
 
         System.out.println("connecting to node......");
 
