@@ -1,9 +1,9 @@
 package com.example.iota;
 
 import jota.IotaAPI;
-import jota.dto.response.GetAccountDataResponse;
 import jota.dto.response.GetNodeInfoResponse;
 import jota.error.ArgumentException;
+import jota.utils.SeedRandomGenerator;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,40 +16,41 @@ class IOTACommunicator {
     private static final String TRYTE_ALPHABET = "9ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final int SEED_LEN = 81;
 
-    public IOTACommunicator(String port) {
+
+    public IotaAPI getApi(){
+        return api;
+    }
+
+    public IOTACommunicator() {
         this.api = new IotaAPI.Builder().protocol("http")
-                .host("localhost")
-                .port(port)
+                .host("192.168.0.168")
+                .port("14265")
                 .build();
     }
 
-    public GetNodeInfoResponse getNodeInfo() throws ArgumentException {
+    public GetNodeInfoResponse getNodeInfo(){
         writeToFile("node.info", api.getNodeInfo().toString());
         return api.getNodeInfo();
     }
 
-    public String getNewAttachedAddress(int lastKnownIndex) throws ArgumentException {
+    public String getNewAttachedAddress() throws ArgumentException {
         String seed = getIOTASeed();
         writeToFile("seed.txt", seed);
-        return api.getNewAddress(seed, 2, lastKnownIndex, true, 1, true).getAddresses().get(0);
+        return api.getNewAddress(seed, 1, 0, false, 2, true).getAddresses().get(0);
     }
 
-    public GetAccountDataResponse getAccountData(String seed) throws ArgumentException {
-        return api.getAccountData(seed, 2, 0, true, 1, true,1, 10, true, 100);
+    public static void main(String[] args) throws ArgumentException {
+        IOTACommunicator iotaCommunicator = new IOTACommunicator();
+        System.out.println("iotaCommunicator = " + iotaCommunicator.getNewAttachedAddress());
     }
+
+    public String[] getTips(){
+        return api.getTips().getHashes();
+    }
+
 
     public static String getIOTASeed(){
-
-        Random random = new Random();
-        // the resulting seed
-        StringBuilder seed = new StringBuilder(SEED_LEN);
-        for(int i = 0; i < SEED_LEN; i++) {
-            int n = random.nextInt(27);
-            char c = TRYTE_ALPHABET.charAt(n);
-            seed.append(c);
-        }
-
-        return seed.toString();
+        return SeedRandomGenerator.generateNewSeed();
     }
 
     private static void writeToFile(String filename, String content){
