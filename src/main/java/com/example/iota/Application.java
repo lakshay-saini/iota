@@ -12,9 +12,6 @@ public class Application {
 
         System.out.println("connecting to node......");
 
-
-        //GetBalancesAndFormatResponse inputs = iotaCommunicator.getInputs();
-
         GetTransferResponse transfers = iotaCommunicator.getTransfers();
         System.out.println("inputs = " + transfers);
 

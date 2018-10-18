@@ -26,11 +26,11 @@
             <artifactId>iota-java</artifactId>
             <version>0.9.10</version>
         </dependency>
-        <dependency>
-            <groupId>com.github.stellar</groupId>
-            <artifactId>java-stellar-sdk</artifactId>
-            <version>LATEST</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.github.stellar</groupId>-->
+            <!--<artifactId>java-stellar-sdk</artifactId>-->
+            <!--<version>LATEST</version>-->
+        <!--</dependency>-->
     </dependencies>
 
     <build>
