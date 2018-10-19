@@ -1,5 +1,6 @@
 package com.example.iota;
 
+import cfb.pearldiver.PearlDiverLocalPoW;
 import jota.IotaAPI;
 import jota.dto.response.*;
 import jota.error.ArgumentException;
@@ -26,13 +27,13 @@ class IOTACommunicator {
     private static final String RECIEVER = "JURAUYCCCNOPELURTU9YF9UOKNJSTBZUPUGURZQDJYOUQBKPNHCWDGYNZOPSZFCCGBCCKKBIKLOEPUCSA9IQTVDND9";
     private static final int SECURITY = 2;
     private static final int START = 0;
-    private static final int END = 20;
-    private static final int THRESHOLD = 100;
+    private static final int END = 10;
+    private static final int THRESHOLD = 10;
     private static final Boolean INCLUSION_STATES = Boolean.TRUE;
-    private static final int DEPTH = 5;
+    private static final int DEPTH = 4;
     private static final int MIN_WEIGHT_MAGNITUDE = 9;
 
-    private IotaAPI api;
+    private static IotaAPI api;
     private int keyIndex;
     private GetNodeInfoResponse nodeInfo;
     private GetBalancesAndFormatResponse inputs;
@@ -136,28 +137,15 @@ class IOTACommunicator {
          */
         List<String> addresses = getAddresses();
 
-
         try {
-            GetBalancesAndFormatResponse inputs = api.getInputs(SEED, 2, 0, 10, 100);
-
-
-            for (String address : addresses) {
-                if(Checksum.isAddressWithChecksum(address)) {
-                    address = Checksum.removeChecksum(address);
-                    addresses.add(address);
-                }
-            }
-
-
-            Transfer transfer = new Transfer(addresses.get(1), 0);
-            Transfer transfer1 = new Transfer(addresses.get(1), 40);
-            Transfer transfer2 = new Transfer(addresses.get(0), -40);
-
             List<Transfer> transfers = new ArrayList<>();
-            transfers.add(transfer);
-            transfers.add(transfer1);
 
-            return api.sendTransfer(getSeed(), SECURITY, 4, 9, transfers, inputs.getInputs(), addresses.get(0), Boolean.TRUE).getSuccessfully()[0];
+            Transfer transfer1 = new Transfer(addresses.get(1), 40);
+            Transfer transfer2 = new Transfer(addresses.get(1), 0);
+            transfers.add(transfer1);
+            transfers.add(transfer2);
+
+            return api.sendTransfer(SEED, SECURITY, 4, 9, transfers, inputs.getInputs(), addresses.get(0), Boolean.TRUE).getSuccessfully()[0];
         } catch (ArgumentException e) {
             e.printStackTrace();
         }
@@ -189,7 +177,7 @@ class IOTACommunicator {
     public GetAccountDataResponse getAccountData() {
         GetAccountDataResponse accountData = null;
         try {
-            accountData = api.getAccountData(SEED, SECURITY, 0, false, 0, true, START, 10, true, 100);
+            accountData = api.getAccountData(SEED, SECURITY, 0, true, 2, true, START, 2, true, 10);
         } catch (ArgumentException e) {
             e.printStackTrace();
         }

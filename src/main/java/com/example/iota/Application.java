@@ -1,7 +1,5 @@
 package com.example.iota;
 
-import jota.dto.response.GetAccountDataResponse;
-import jota.dto.response.GetTransferResponse;
 import jota.error.ArgumentException;
 import jota.model.Bundle;
 import jota.model.Transaction;
@@ -18,7 +16,7 @@ public class Application {
 
     public static void main(String[] args) throws ArgumentException {
 
-        IOTACommunicator communicator = new IOTACommunicator(false);
+        IOTACommunicator communicator = new IOTACommunicator(true);
 
         System.out.println("connecting to node......");
         Boolean aBoolean = communicator.setAccount();
