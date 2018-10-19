@@ -19,8 +19,10 @@ public class Application {
         IOTACommunicator communicator = new IOTACommunicator(true);
 
         System.out.println("connecting to node......");
-        Boolean aBoolean = communicator.setAccount();
-        System.out.println("aBoolean = " + aBoolean);
+        String address = "YKAMTJFUDEWFEKZJBPXVVTOJGMGVSXHUASZFQO9SDZCECYLZ9XOECZJDIYTSWSZZHLROVWLEIZBHQLUUWMNNFJOGEY";
+        List<Transaction> transactions = communicator.sendTransaction(address);
+        System.out.println("transactions : " + transactions.size());
+
     }
 
     public Application(Bundle[] bundles) {
