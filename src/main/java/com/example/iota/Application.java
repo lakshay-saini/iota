@@ -1,11 +1,11 @@
 package com.example.iota;
 
+import jota.dto.response.GetAccountDataResponse;
 import jota.dto.response.GetTransferResponse;
 import jota.error.ArgumentException;
 import jota.model.Bundle;
 import jota.model.Transaction;
 
-import javax.naming.CompositeName;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,13 +21,8 @@ public class Application {
         IOTACommunicator communicator = new IOTACommunicator(false);
 
         System.out.println("connecting to node......");
-
-        Bundle[] bundles = communicator.getTransfers().getTransfers();
-
-        Application application = new Application(bundles);
-
-
-        System.out.println("transfers = " + transactions);
+        Boolean aBoolean = communicator.setAccount();
+        System.out.println("aBoolean = " + aBoolean);
     }
 
     public Application(Bundle[] bundles) {

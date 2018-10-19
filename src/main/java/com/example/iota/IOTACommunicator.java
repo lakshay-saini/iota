@@ -3,6 +3,7 @@ package com.example.iota;
 import jota.IotaAPI;
 import jota.dto.response.*;
 import jota.error.ArgumentException;
+import jota.model.Bundle;
 import jota.model.Input;
 import jota.model.Transaction;
 import jota.model.Transfer;
@@ -19,7 +20,9 @@ import java.util.stream.Collectors;
  */
 class IOTACommunicator {
 
-    private static final String SEED = "NGPYBRC9BBNKDTNRQHLBYZGGTXBDAWDQQSGAMDMZIIQMFXWJNWCDCXEXOEEHBJKSDLHXEKNBWCSZWYBRC";
+    private static final String SEED = "NPODIWPLKEZPCIIXZVXFIGNLNGVCOIQVLX9Y9COSGAENHSTZKZA9JBTEWIKWQYGRKXDRYMXTWYFAEOOVM";
+    private static final String SEED_I = "NGPYBRC9BBNKDTNRQHLBYZGGTXBDAWDQQSGAMDMZIIQMFXWJNWCDCXEXOEEHBJKSDLHXEKNBWCSZWYBRC";
+
     private static final String RECIEVER = "JURAUYCCCNOPELURTU9YF9UOKNJSTBZUPUGURZQDJYOUQBKPNHCWDGYNZOPSZFCCGBCCKKBIKLOEPUCSA9IQTVDND9";
     private static final int SECURITY = 2;
     private static final int START = 0;
@@ -51,61 +54,6 @@ class IOTACommunicator {
             this.keyIndex = findActiveAddressIndex();
         }
 
-    }
-
-    public GetBalancesAndFormatResponse getInputs() {
-        return inputs;
-    }
-
-    private List<Transfer> transfer() {
-        Transfer transfer = new Transfer(RECIEVER, 1);
-        return Collections.singletonList(transfer);
-    }
-
-    public SendTransferResponse sendTransfer() throws ArgumentException {
-
-        StopWatch stopWatch = new StopWatch();
-        List<String> trites = api.prepareTransfers(SEED, SECURITY, this.transfer(), StringUtils.EMPTY, this.inputs.getInputs(), Boolean.TRUE);
-
-        List<String> collect = trites.stream().filter(s -> s.length() == 2673).collect(Collectors.toList());
-
-        GetAttachToTangleResponse getAttachToTangleResponse = attachToTangle(collect.get(0), collect.get(1));
-
-        List<Transaction> transactions = api.sendTrytes(collect.toArray(new String[collect.size()]), DEPTH, MIN_WEIGHT_MAGNITUDE);
-        Boolean[] successful = new Boolean[transactions.size()];
-
-        for (int i = 0; i < transactions.size(); ++i) {
-            FindTransactionResponse response = api.findTransactionsByBundles((transactions.get(i)).getBundle());
-            successful[i] = response.getHashes().length != 0;
-        }
-
-        return SendTransferResponse.create(transactions, successful, stopWatch.getElapsedTimeMili());
-
-    }
-
-    public GetAttachToTangleResponse attachToTangle(String... collect) throws ArgumentException {
-        String trunkTransaction = api.getTips().getHashes()[100];
-        String branchTransaction = api.getTips().getHashes()[101];
-        return api.attachToTangle(trunkTransaction, branchTransaction, MIN_WEIGHT_MAGNITUDE, collect);
-
-    }
-
-    /**
-     * Purpose : Getter method of IotaApi
-     *
-     * @return IotaApi object
-     */
-    public IotaAPI getApi() {
-        return api;
-    }
-
-    /**
-     * Purpose : Get the Iota node Info
-     *
-     * @return GetNodeInfoResponse object
-     */
-    public GetNodeInfoResponse getNodeInfo() {
-        return this.nodeInfo;
     }
 
     /**
@@ -165,17 +113,87 @@ class IOTACommunicator {
 
     /**
      * Purpose : Getting newly generated address
-     *
+     *HQRQJKZZVRCKKFUDUCKPGTCBRDNYYJVQHYUXQSAUUYRZWRXYLBBVIWBPKAZBFZLUDVBBBPFHVJUWYQOLC
      * @return List of addresses
      */
+
     public List<String> getAddresses() {
-        List<String> newAddressess = new ArrayList<>();
+        List<String> newAddresses = new ArrayList<>();
         try {
-            newAddressess = api.getNewAddress(SEED, SECURITY, keyIndex, false, 10, true).getAddresses();
+            newAddresses = api.getNewAddress(SEED, SECURITY, 0, false, 2, true).getAddresses();
         } catch (ArgumentException e) {
             e.printStackTrace();
         }
-        return newAddressess;
+
+        return newAddresses;
+    }
+
+
+    public Boolean setAccount() {
+
+        /*
+         * If we can successfully transfer the 0 value to the address then the address get place in tangle
+         */
+        List<String> addresses = getAddresses();
+
+
+        try {
+            GetBalancesAndFormatResponse inputs = api.getInputs(SEED, 2, 0, 10, 100);
+
+
+            for (String address : addresses) {
+                if(Checksum.isAddressWithChecksum(address)) {
+                    address = Checksum.removeChecksum(address);
+                    addresses.add(address);
+                }
+            }
+
+
+            Transfer transfer = new Transfer(addresses.get(1), 0);
+            Transfer transfer1 = new Transfer(addresses.get(1), 40);
+            Transfer transfer2 = new Transfer(addresses.get(0), -40);
+
+            List<Transfer> transfers = new ArrayList<>();
+            transfers.add(transfer);
+            transfers.add(transfer1);
+
+            return api.sendTransfer(getSeed(), SECURITY, 4, 9, transfers, inputs.getInputs(), addresses.get(0), Boolean.TRUE).getSuccessfully()[0];
+        } catch (ArgumentException e) {
+            e.printStackTrace();
+        }
+        return Boolean.FALSE;
+    }
+
+
+    /**
+     * purpose : findTransactionObjects By Addresses related to particular seed
+     *
+     * @param addresses : List<String>
+     * @return : List<Transaction>
+     */
+    public List<Transaction> findTransactionObjectsByAddresses(List<String> addresses) {
+        List<Transaction> transactionObjects = null;
+        try {
+            transactionObjects = api.findTransactionObjectsByAddresses(addresses.toArray(new String[addresses.size()]));
+        } catch (ArgumentException e) {
+            e.printStackTrace();
+        }
+        return transactionObjects;
+    }
+
+    /**
+     * Purpose : Retrieve all data from given seed
+     *
+     * @return : GetAccountDataResponse object
+     */
+    public GetAccountDataResponse getAccountData() {
+        GetAccountDataResponse accountData = null;
+        try {
+            accountData = api.getAccountData(SEED, SECURITY, 0, false, 0, true, START, 10, true, 100);
+        } catch (ArgumentException e) {
+            e.printStackTrace();
+        }
+        return accountData;
     }
 
     /**
@@ -200,6 +218,12 @@ class IOTACommunicator {
      */
     public static String getSeed() {
         return SeedRandomGenerator.generateNewSeed();
+    }
+
+    public static void main(String[] args) throws ArgumentException {
+        String address = "HQRQJKZZVRCKKFUDUCKPGTCBRDNYYJVQHYUXQSAUUYRZWRXYLBBVIWBPKAZBFZLUDVBBBPFHVJUWYQOLC";
+        String addChecksum = Checksum.addChecksum(address);
+        System.out.println("addChecksum = " + addChecksum);
     }
 
     public long getElapsedTime() {
