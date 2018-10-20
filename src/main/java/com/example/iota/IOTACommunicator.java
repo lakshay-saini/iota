@@ -1,17 +1,24 @@
 package com.example.iota;
 
 import jota.IotaAPI;
-import jota.dto.response.*;
+import jota.dto.response.GetAccountDataResponse;
+import jota.dto.response.GetBalancesAndFormatResponse;
+import jota.dto.response.GetNodeInfoResponse;
+import jota.dto.response.GetTransferResponse;
+import jota.dto.response.SendTransferResponse;
 import jota.error.ArgumentException;
-import jota.model.Input;
+import jota.model.Bundle;
 import jota.model.Transaction;
 import jota.model.Transfer;
-import jota.utils.*;
+import jota.utils.Checksum;
+import jota.utils.SeedRandomGenerator;
+import jota.utils.StopWatch;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * purpose: Establish connection with Iota Node and receive Iota daemon response
@@ -24,9 +31,11 @@ class IOTACommunicator {
     private static final String RECIEVER = "JURAUYCCCNOPELURTU9YF9UOKNJSTBZUPUGURZQDJYOUQBKPNHCWDGYNZOPSZFCCGBCCKKBIKLOEPUCSA9IQTVDND9";
     private static final int SECURITY = 2;
     private static final int START = 0;
-    private static final int END = 10;
-    private static final int THRESHOLD = 2;
+    private static final int END = 5;
+    private static final int THRESHOLD = 1;
     private static final Boolean INCLUSION_STATES = Boolean.TRUE;
+    private static final Boolean CHECKSUM = Boolean.FALSE;
+
     private static final int DEPTH = 4;
     private static final int MIN_WEIGHT_MAGNITUDE = 9;
 
@@ -51,9 +60,11 @@ class IOTACommunicator {
         }
     }
 
-    public Boolean isNodeActive(){
+
+    public Boolean isNodeActive() {
         return Objects.nonNull(api.getNodeInfo().getLatestMilestone());
     }
+
     /**
      * Purpose : Get Account Specific data by providing the private seed
      *
@@ -62,7 +73,7 @@ class IOTACommunicator {
     public GetBalancesAndFormatResponse getInputsResponse() {
         GetBalancesAndFormatResponse inputs = new GetBalancesAndFormatResponse();
         try {
-            if(isNodeActive()){
+            if (isNodeActive()) {
                 inputs = api.getInputs(SEED, SECURITY, START, END, THRESHOLD);
             }
         } catch (ArgumentException e) {
@@ -81,14 +92,28 @@ class IOTACommunicator {
         GetTransferResponse transfers = new GetTransferResponse();
 
         try {
-            if(isNodeActive()){
-                transfers = api.getTransfers(SEED, SECURITY, 0, 0, INCLUSION_STATES);
+            if (isNodeActive()) {
+                transfers = api.getTransfers(SEED, SECURITY, START, END , INCLUSION_STATES);
             }
         } catch (ArgumentException e) {
             e.printStackTrace();
         }
 
         return transfers;
+    }
+
+    public Bundle[] getBundleFromAddress(){
+        List<String> addresses = getAddresses();
+        Bundle[] bundles = new Bundle[0];
+
+        try {
+            if (isNodeActive()) {
+                bundles = api.bundlesFromAddresses(addresses.toArray(new String[addresses.size()]), true);
+            }
+        } catch (ArgumentException e) {
+            e.printStackTrace();
+        }
+        return bundles;
     }
 
     /**
@@ -102,15 +127,16 @@ class IOTACommunicator {
 
     /**
      * Purpose : Getting newly generated address
-     *HQRQJKZZVRCKKFUDUCKPGTCBRDNYYJVQHYUXQSAUUYRZWRXYLBBVIWBPKAZBFZLUDVBBBPFHVJUWYQOLC
+     * HQRQJKZZVRCKKFUDUCKPGTCBRDNYYJVQHYUXQSAUUYRZWRXYLBBVIWBPKAZBFZLUDVBBBPFHVJUWYQOLC
+     *
      * @return List of addresses
      */
 
     public List<String> getAddresses() {
         List<String> newAddresses = new ArrayList<>();
         try {
-            if(isNodeActive()){
-                newAddresses = api.getNewAddress(SEED, SECURITY, 0, false, 3, true).getAddresses();
+            if (isNodeActive()) {
+                newAddresses = api.getNewAddress(SEED, SECURITY, START, CHECKSUM, END, true).getAddresses();
             }
         } catch (ArgumentException e) {
             e.printStackTrace();
@@ -120,7 +146,8 @@ class IOTACommunicator {
     }
 
     /**
-     *  Purpose : Method is to transfer iota from one address to another one
+     * Purpose : Method is to transfer iota from one address to another one
+     *
      * @param address : String
      * @return : List<Transaction>
      */
@@ -138,13 +165,24 @@ class IOTACommunicator {
              * Here transfer1 and transfer2 is to secure the balance and transfer to another address
              *  transfer3 is for receiver address
              */
-            Transfer transfer1 = new Transfer(addresses.get(addresses.size() -1), 30);
-            Transfer transfer2 = new Transfer(addresses.get(addresses.size() -1), 0);
-            Transfer transfer3 = new Transfer(address, 10);
+
+            if(Checksum.isAddressWithChecksum(address)){
+                address = Checksum.removeChecksum(address);
+            }
+
+            int amount = 5;
+            int remainingAccountBalance = getAccountBalance().intValue() - amount;
+            String latestAddress = addresses.get(addresses.size() - 1);
+
+            Transfer transfer1 = new Transfer(latestAddress, remainingAccountBalance);
+            Transfer transfer2 = new Transfer(latestAddress, 0);
+            Transfer transfer3 = new Transfer(address, amount);
+            Transfer transfer4 = new Transfer(address, 0);
 
             transfers.add(transfer1);
             transfers.add(transfer2);
             transfers.add(transfer3);
+            transfers.add(transfer4);
 
             SendTransferResponse sendTransfer = api.sendTransfer(SEED, SECURITY, DEPTH, MIN_WEIGHT_MAGNITUDE, transfers, inputs.getInputs(), addresses.get(0), Boolean.TRUE);
 
@@ -166,7 +204,7 @@ class IOTACommunicator {
     public List<Transaction> findTransactionObjectsByAddresses(List<String> addresses) {
         List<Transaction> transactionObjects = null;
         try {
-            if(isNodeActive()){
+            if (isNodeActive()) {
                 transactionObjects = api.findTransactionObjectsByAddresses(addresses.toArray(new String[addresses.size()]));
             }
         } catch (ArgumentException e) {
@@ -183,8 +221,8 @@ class IOTACommunicator {
     public GetAccountDataResponse getAccountData() {
         GetAccountDataResponse accountData = null;
         try {
-            if(isNodeActive()){
-                accountData = api.getAccountData(SEED, SECURITY, 0, true, 2, true, START, 2, true, 10);
+            if (isNodeActive()) {
+                accountData = api.getAccountData(SEED, SECURITY, START, CHECKSUM, END, true, START, END, INCLUSION_STATES, THRESHOLD);
             }
         } catch (ArgumentException e) {
             e.printStackTrace();
