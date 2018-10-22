@@ -13,12 +13,21 @@ import jota.model.Transfer;
 import jota.utils.Checksum;
 import jota.utils.SeedRandomGenerator;
 import jota.utils.StopWatch;
+import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * purpose: Establish connection with Iota Node and receive Iota daemon response
@@ -93,7 +102,7 @@ class IOTACommunicator {
 
         try {
             if (isNodeActive()) {
-                transfers = api.getTransfers(SEED, SECURITY, START, END , INCLUSION_STATES);
+                transfers = api.getTransfers(SEED, SECURITY, START, 0, INCLUSION_STATES);
             }
         } catch (ArgumentException e) {
             e.printStackTrace();
@@ -102,7 +111,7 @@ class IOTACommunicator {
         return transfers;
     }
 
-    public Bundle[] getBundleFromAddress(){
+    public Bundle[] getBundleFromAddress() {
         List<String> addresses = getAddresses();
         Bundle[] bundles = new Bundle[0];
 
@@ -136,8 +145,9 @@ class IOTACommunicator {
         List<String> newAddresses = new ArrayList<>();
         try {
             if (isNodeActive()) {
-                newAddresses = api.getNewAddress(SEED, SECURITY, START, CHECKSUM, END, true).getAddresses();
+                newAddresses = api.getNewAddress(SEED, SECURITY, START, CHECKSUM, 0, true).getAddresses();
             }
+
         } catch (ArgumentException e) {
             e.printStackTrace();
         }
@@ -166,23 +176,23 @@ class IOTACommunicator {
              *  transfer3 is for receiver address
              */
 
-            if(Checksum.isAddressWithChecksum(address)){
-                address = Checksum.removeChecksum(address);
-            }
-
-            int amount = 5;
+            int amount = 1;
             int remainingAccountBalance = getAccountBalance().intValue() - amount;
             String latestAddress = addresses.get(addresses.size() - 1);
-
             Transfer transfer1 = new Transfer(latestAddress, remainingAccountBalance);
             Transfer transfer2 = new Transfer(latestAddress, 0);
-            Transfer transfer3 = new Transfer(address, amount);
-            Transfer transfer4 = new Transfer(address, 0);
-
             transfers.add(transfer1);
             transfers.add(transfer2);
-            transfers.add(transfer3);
-            transfers.add(transfer4);
+
+            if (!address.equalsIgnoreCase(StringUtils.EMPTY)) {
+
+                address = Checksum.isAddressWithChecksum(address) ? Checksum.removeChecksum(address) : address;
+                Transfer transfer3 = new Transfer(address, 0);
+                Transfer transfer4 = new Transfer(address, amount);
+                transfers.add(transfer3);
+                transfers.add(transfer4);
+            }
+
 
             SendTransferResponse sendTransfer = api.sendTransfer(SEED, SECURITY, DEPTH, MIN_WEIGHT_MAGNITUDE, transfers, inputs.getInputs(), addresses.get(0), Boolean.TRUE);
 
@@ -198,11 +208,11 @@ class IOTACommunicator {
     /**
      * purpose : findTransactionObjects By Addresses related to particular seed
      *
-     * @param addresses : List<String>
      * @return : List<Transaction>
      */
-    public List<Transaction> findTransactionObjectsByAddresses(List<String> addresses) {
-        List<Transaction> transactionObjects = null;
+    public List<Transaction> findTransactionObjectsByAddresses() {
+        List<String> addresses = getAddresses();
+        List<Transaction> transactionObjects = new ArrayList<>();
         try {
             if (isNodeActive()) {
                 transactionObjects = api.findTransactionObjectsByAddresses(addresses.toArray(new String[addresses.size()]));
@@ -210,7 +220,11 @@ class IOTACommunicator {
         } catch (ArgumentException e) {
             e.printStackTrace();
         }
-        return transactionObjects;
+
+        return transactionObjects.stream()
+                .sorted(Comparator.comparing(Transaction::getTimestamp))
+                .collect(Collectors.toList());
+
     }
 
     /**
@@ -230,20 +244,25 @@ class IOTACommunicator {
         return accountData;
     }
 
-    /**
-     * Purpose : Method to write the content to file
-     *
-     * @param filename : String
-     * @param content  : String
-     */
-    private static void writeToFile(String filename, String content) {
-        try {
-            FileOutputStream outputStream = new FileOutputStream(filename);
-            outputStream.write(content.getBytes());
-        } catch (IOException e) {
+
+    public static void writeToFile(byte[] bytes, File file) {
+        try (ReadableByteChannel source = Channels.newChannel(new ByteArrayInputStream(bytes));
+             FileOutputStream output = new FileOutputStream(file);
+             WritableByteChannel destination = output.getChannel()) {
+
+            ByteBuffer buffer = ByteBuffer.allocateDirect(20 * 1024);
+            while (source.read(buffer) != -1) {
+                buffer.flip();
+                while (buffer.hasRemaining()) {
+                    destination.write(buffer);
+                }
+                buffer.clear();
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     /**
      * Purpose : Method to generate the secure seed
@@ -257,4 +276,5 @@ class IOTACommunicator {
     public long getElapsedTime() {
         return this.stopWatch.getElapsedTimeSecs();
     }
+
 }
