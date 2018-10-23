@@ -12,20 +12,22 @@ import java.nio.file.Paths;
 
 public class SeedUtils {
 
+    private static final String IV = "somerandstr12345";
+
     public static void main(String args[]) throws Exception {
 
-        String value = "somerandstr12345";
 
-        String PhpEncodedString = "9ud86wfgllkbiJ0VBcwrhAvnWnBB8eBoTjTMiaMlOKQ=";
-        String javaEncodedString = "lB4zuOZyA2LWJ6RYyca5Ghx0HYd6psDb27H51DLKQAc=";
+        //TODO:
+//        $keystorePath = '/home/dz-jp-25/Task/';
+//        $filename = $keystorePath.'ripple--'.date('c').'--'.'$propose[account_id]';
 
-        String key = "somerandstr12345";
-        String iv = "somerandstr12345";
+        String seed = "NPODIWPLKEZPCIIXZVXFIGNLNGVCOIQVLX9Y9COSGAENHSTZKZA9JBTEWIKWQYGRKXDRYMXTWYFAEOOVM";
 
-        System.out.println("decrypt :" + PhpEncodedString + " : " + decrypt(PhpEncodedString, key, iv));
-        System.out.println("decrypt :" + javaEncodedString + " = " + decrypt(javaEncodedString, key, iv));
+        String encodedString = "tTpV5UFvJahfMtng8WCNUt0XyJUZxqFaTREngmuylFAYUvJ9tWyZAm6mZgi4bi6RqPwzOGHMv9AVghwjtCu2aDWqB3ZBKdSwP56tWAgGORsOBCu3gyp1LxGtY1IC1ACO=";
 
-        System.out.println("encrypt = " + new String(Base64.encodeBase64(encrypt(value, key, iv))));
+        System.out.println("decrypt :" + encodedString + " : " + decrypt(encodedString, IV, IV));
+
+        System.out.println("encrypt = " + new String(Base64.encodeBase64(encrypt(seed, IV, IV))));
     }
 
     public static byte[] encrypt(String plainText, String key, String iv) throws Exception {
