@@ -19,9 +19,9 @@ public class Application {
         IOTACommunicator communicator = new IOTACommunicator(true);
 
         System.out.println("connecting to node......");
-        String address = "YKAMTJFUDEWFEKZJBPXVVTOJGMGVSXHUASZFQO9SDZCECYLZ9XOECZJDIYTSWSZZHLROVWLEIZBHQLUUWMNNFJOGEY";
-        List<Transaction> transactions = communicator.sendTransaction(address);
-        System.out.println("transactions : " + transactions.size());
+
+        List<Transaction> transactionObjectsByAddresses = communicator.findTransactionObjectsByAddresses();
+        System.out.println("transactionObjectsByAddresses = " + transactionObjectsByAddresses);
 
     }
 
