@@ -28,32 +28,24 @@ public class SeedUtils {
         System.out.println("encrypt = " + new String(Base64.encodeBase64(encrypt(value, key, iv))));
     }
 
-    public static byte[] encrypt(String  plainText, String key, String iv) throws Exception{
+    public static byte[] encrypt(String plainText, String key, String iv) throws Exception {
 
-        byte[] textBytes = plainText.getBytes();
-        byte[] keyBytes = key.getBytes();
-        byte[] ivBytes  = iv.getBytes();
+        SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), "AES");
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv.getBytes());
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
 
-        SecretKeySpec secretKey=new SecretKeySpec(keyBytes,"AES");
-        IvParameterSpec ivParameterSpec=new IvParameterSpec(ivBytes);
-        Cipher cipher=Cipher.getInstance("AES/CBC/PKCS5Padding");
-        cipher.init(Cipher.ENCRYPT_MODE,secretKey,ivParameterSpec);
-
-        return cipher.doFinal(textBytes);
+        return cipher.doFinal(plainText.getBytes());
     }
 
-    public static String decrypt(String  plainText, String key, String iv) throws Exception{
+    public static String decrypt(String plainText, String key, String iv) throws Exception {
 
-        byte[] textBytes = Base64.decodeBase64(plainText);
-        byte[] keyBytes = key.getBytes();
-        byte[] ivBytes  = iv.getBytes();
+        SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), "AES");
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv.getBytes());
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
 
-        SecretKeySpec secretKey=new SecretKeySpec(keyBytes,"AES");
-        IvParameterSpec ivParameterSpec=new IvParameterSpec(ivBytes);
-        Cipher cipher=Cipher.getInstance("AES/CBC/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE,secretKey,ivParameterSpec);
-
-        return new String(cipher.doFinal(textBytes));
+        return new String(cipher.doFinal(Base64.decodeBase64(plainText)));
     }
 
 
