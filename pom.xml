@@ -11,6 +11,10 @@
     <properties>
         <java.version>1.8</java.version>
         <plugin.maven.compiler.version>3.7.0</plugin.maven.compiler.version>
+          <sonar.projectKey>lakshay</sonar.projectKey>
+         <sonar.organization>lakshay-saini-github</sonar.organization>
+         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+         <sonar.login>9065bfe8b19f2201cee6accecb95bd6bdf2ebf34</sonar.login
     </properties>
 
     <repositories>
